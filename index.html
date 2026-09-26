@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>مكتبة المصطفى | الوحش الهيكلي</title>
+<title>مكتبة المصطفى | الأفعى العظمية</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
   html,body{
@@ -82,15 +82,15 @@
 </head>
 <body>
 <canvas id="c"></canvas>
-<div id="hint">اهــرب… إن استطعت</div>
+<div id="hint">لا تتحرك كثيراً… إنها تشمّك</div>
 
 <div id="watermark">© جميع الحقوق محفوظة — <b>مكتبة المصطفى</b></div>
 
 <div id="overlay">
-  <h1>الــوحــش الــعــظــمــي</h1>
-  <p>ليس هيكلاً عادياً… إنه شيءٌ أقدم من الموت نفسه، جائعٌ، لا يتوقف.</p>
-  <div class="warn">⚠ يُنصح برفع مستوى الصوت — لا تنظر إليه طويلاً ⚠</div>
-  <button id="enter">واجهــه إن جــرؤت</button>
+  <h1>الأفــعــى الــعــظــمــيــة</h1>
+  <p>زحفت من أعماق الأرض… عمودها الفقري يطقطق، وأنيابها تنزّ سماً أسود. لا أرجل لها، لكنها لا تتوقف.</p>
+  <div class="warn">⚠ ارفع الصوت للأقصى — تجربة صوتية مرعبة ⚠</div>
+  <button id="enter">ادخــل إن جــرؤت</button>
   <div class="copy">© مكتبة المصطفى — جميع الحقوق محفوظة</div>
 </div>
 
@@ -99,7 +99,7 @@
   'use strict';
 
   /* ============================================================
-     محرك الصوت المرعب
+     محرك الصوت المرعب — نسخة أعلى وأكثر فزعاً
      ============================================================ */
   let audio = null;
 
@@ -107,50 +107,67 @@
     const AC = window.AudioContext || window.webkitAudioContext;
     const ctx = new AC();
 
+    /* --- الماستر: صوت عالٍ + ضاغط ديناميكي لتضخيم الإحساس --- */
+    const comp = ctx.createDynamicsCompressor();
+    comp.threshold.value = -8;
+    comp.knee.value = 4;
+    comp.ratio.value = 12;
+    comp.attack.value = 0.002;
+    comp.release.value = 0.25;
+
     const master = ctx.createGain();
     master.gain.value = 0.0001;
-    master.connect(ctx.destination);
-    master.gain.exponentialRampToValueAtTime(0.45, ctx.currentTime + 4);
+    master.connect(comp).connect(ctx.destination);
+    // رفع تدريجي إلى مستوى عالٍ
+    master.gain.exponentialRampToValueAtTime(0.95, ctx.currentTime + 3.5);
 
-    // درون عميق جداً
+    /* --- درون عميق جداً (يُحس في الصدر) --- */
     const d1 = ctx.createOscillator();
     d1.type = 'sine';
-    d1.frequency.value = 28;                 // أعمق
+    d1.frequency.value = 24;                    // أعمق من قبل
     const d1g = ctx.createGain();
-    d1g.gain.value = 0.65;
+    d1g.gain.value = 0.85;
     d1.connect(d1g).connect(master);
     d1.start();
 
     const d2 = ctx.createOscillator();
     d2.type = 'sine';
-    d2.frequency.value = 28.9;
+    d2.frequency.value = 24.7;                  // اهتزاز بطيء
     const d2g = ctx.createGain();
-    d2g.gain.value = 0.45;
+    d2g.gain.value = 0.65;
     d2.connect(d2g).connect(master);
     d2.start();
 
-    // طبقة وسطى مشوهة
+    const d3 = ctx.createOscillator();
+    d3.type = 'triangle';
+    d3.frequency.value = 48;
+    const d3g = ctx.createGain();
+    d3g.gain.value = 0.22;
+    d3.connect(d3g).connect(master);
+    d3.start();
+
+    /* --- طبقة وسطى مشوهة تنزف --- */
     const mid = ctx.createOscillator();
     mid.type = 'sawtooth';
-    mid.frequency.value = 62;
+    mid.frequency.value = 55;
     const midF = ctx.createBiquadFilter();
     midF.type = 'lowpass';
-    midF.frequency.value = 140;
-    midF.Q.value = 12;
+    midF.frequency.value = 120;
+    midF.Q.value = 14;
     const midG = ctx.createGain();
-    midG.gain.value = 0.055;
+    midG.gain.value = 0.09;
     mid.connect(midF).connect(midG).connect(master);
     mid.start();
 
     const lfo1 = ctx.createOscillator();
-    lfo1.frequency.value = 0.06;
+    lfo1.frequency.value = 0.055;
     const lfo1g = ctx.createGain();
-    lfo1g.gain.value = 140;
+    lfo1g.gain.value = 130;
     lfo1.connect(lfo1g).connect(midF.frequency);
     lfo1.start();
 
-    // ضجيج رياح
-    const bufLen = ctx.sampleRate * 3;
+    /* --- ضجيج رياح/أنفاس قوي --- */
+    const bufLen = ctx.sampleRate * 4;
     const buf = ctx.createBuffer(1, bufLen, ctx.sampleRate);
     const bd = buf.getChannelData(0);
     for (let i = 0; i < bufLen; i++) bd[i] = Math.random() * 2 - 1;
@@ -160,79 +177,133 @@
     wind.loop = true;
     const windF = ctx.createBiquadFilter();
     windF.type = 'bandpass';
-    windF.frequency.value = 300;
-    windF.Q.value = 0.6;
+    windF.frequency.value = 260;
+    windF.Q.value = 0.55;
     const windG = ctx.createGain();
-    windG.gain.value = 0.07;
+    windG.gain.value = 0.14;
     wind.connect(windF).connect(windG).connect(master);
     wind.start();
 
     const lfo2 = ctx.createOscillator();
-    lfo2.frequency.value = 0.04;
+    lfo2.frequency.value = 0.035;
     const lfo2g = ctx.createGain();
-    lfo2g.gain.value = 0.06;
+    lfo2g.gain.value = 0.12;
     lfo2.connect(lfo2g).connect(windG.gain);
     lfo2.start();
 
-    // زئير الوحش العميق
-    function growl() {
-      const t = ctx.currentTime;
-      const o = ctx.createOscillator();
-      o.type = 'sawtooth';
-      o.frequency.setValueAtTime(48, t);
-      o.frequency.linearRampToValueAtTime(32, t + 1.2);
-      const f = ctx.createBiquadFilter();
-      f.type = 'lowpass';
-      f.frequency.value = 180;
-      f.Q.value = 8;
-      const g = ctx.createGain();
-      g.gain.setValueAtTime(0.0001, t);
-      g.gain.linearRampToValueAtTime(0.13, t + 0.15);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + 1.4);
-      o.connect(f).connect(g).connect(master);
-      o.start(t);
-      o.stop(t + 1.5);
-    }
+    /* --- طبقة ضجيج حاد (صرير معادن/أظافر) --- */
+    const scrape = ctx.createBufferSource();
+    scrape.buffer = buf;
+    scrape.loop = true;
+    const scrapeF = ctx.createBiquadFilter();
+    scrapeF.type = 'highpass';
+    scrapeF.frequency.value = 3200;
+    scrapeF.Q.value = 3;
+    const scrapeG = ctx.createGain();
+    scrapeG.gain.value = 0.018;
+    scrape.connect(scrapeF).connect(scrapeG).connect(master);
+    scrape.start();
 
-    // نبضة قلب
+    const lfo3 = ctx.createOscillator();
+    lfo3.frequency.value = 0.22;
+    const lfo3g = ctx.createGain();
+    lfo3g.gain.value = 0.015;
+    lfo3.connect(lfo3g).connect(scrapeG.gain);
+    lfo3.start();
+
+    /* ====== دوال الأصوات الحية ====== */
+
+    // نبضة قلب قوية
     function heartbeat() {
       const t = ctx.currentTime;
       [0, 0.17].forEach((off, i) => {
         const o = ctx.createOscillator();
         o.type = 'sine';
-        const v = i === 0 ? 58 : 44;
+        const v = i === 0 ? 62 : 46;
         o.frequency.setValueAtTime(v, t + off);
-        o.frequency.exponentialRampToValueAtTime(24, t + off + 0.2);
+        o.frequency.exponentialRampToValueAtTime(22, t + off + 0.22);
         const g = ctx.createGain();
         g.gain.setValueAtTime(0.0001, t + off);
-        g.gain.linearRampToValueAtTime(i === 0 ? 0.85 : 0.6, t + off + 0.015);
-        g.gain.exponentialRampToValueAtTime(0.0001, t + off + 0.34);
+        g.gain.linearRampToValueAtTime(i === 0 ? 1.2 : 0.9, t + off + 0.012);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + off + 0.36);
         o.connect(g).connect(master);
         o.start(t + off);
-        o.stop(t + off + 0.38);
+        o.stop(t + off + 0.4);
       });
     }
 
-    // صرير مفاجئ
+    // طقطقة عظام — صوت مميز للأفعى العظمية
+    function boneClick() {
+      const t = ctx.currentTime;
+      const clicks = 3 + Math.floor(Math.random() * 5);
+      for (let i = 0; i < clicks; i++) {
+        const off = i * (0.035 + Math.random() * 0.05);
+        const o = ctx.createOscillator();
+        o.type = 'square';
+        o.frequency.value = 1200 + Math.random() * 2400;
+        const f = ctx.createBiquadFilter();
+        f.type = 'bandpass';
+        f.frequency.value = 1800 + Math.random() * 1500;
+        f.Q.value = 6;
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0.0001, t + off);
+        g.gain.linearRampToValueAtTime(0.09 + Math.random() * 0.06, t + off + 0.003);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + off + 0.05);
+        o.connect(f).connect(g).connect(master);
+        o.start(t + off);
+        o.stop(t + off + 0.06);
+      }
+    }
+
+    // هسهسة الأفعى (الحرف S)
+    function hiss() {
+      const t = ctx.currentTime;
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      src.loop = true;
+      const f = ctx.createBiquadFilter();
+      f.type = 'bandpass';
+      f.frequency.setValueAtTime(4500, t);
+      f.frequency.exponentialRampToValueAtTime(2200, t + 1.6);
+      f.Q.value = 5;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.linearRampToValueAtTime(0.22, t + 0.12);
+      g.gain.linearRampToValueAtTime(0.16, t + 1.1);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 1.9);
+      // تعديل بسيط داخل الهسهسة
+      const lfo = ctx.createOscillator();
+      lfo.frequency.value = 8;
+      const lfoG = ctx.createGain();
+      lfoG.gain.value = 400;
+      lfo.connect(lfoG).connect(f.frequency);
+      lfo.start(t);
+      lfo.stop(t + 1.9);
+      src.connect(f).connect(g).connect(master);
+      src.start(t);
+      src.stop(t + 2.0);
+    }
+
+    // صرير/طعنة عالية
     function stab() {
       const t = ctx.currentTime;
-      const scale = [185, 196, 207.65, 220, 233.08, 246.94, 261.63];
+      const scale = [174.61, 185, 196, 207.65, 220, 233.08, 246.94];
       const base = scale[Math.floor(Math.random() * scale.length)];
-      [1, 1.06].forEach((m) => {
+      [1, 1.07, 1.5].forEach((m, idx) => {
         const o = ctx.createOscillator();
-        o.type = 'sawtooth';
+        o.type = idx === 2 ? 'square' : 'sawtooth';
         o.frequency.value = base * m;
         const f = ctx.createBiquadFilter();
         f.type = 'lowpass';
-        f.frequency.setValueAtTime(2600, t);
-        f.frequency.exponentialRampToValueAtTime(280, t + 1.6);
+        f.frequency.setValueAtTime(3200, t);
+        f.frequency.exponentialRampToValueAtTime(220, t + 1.8);
         const g = ctx.createGain();
         g.gain.setValueAtTime(0.0001, t);
-        g.gain.linearRampToValueAtTime(0.09, t + 0.02);
-        g.gain.exponentialRampToValueAtTime(0.0001, t + 1.8);
+        g.gain.linearRampToValueAtTime(0.13 / (idx + 1), t + 0.015);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 2.0);
         o.connect(f).connect(g).connect(master);
         o.start(t);
-        o.stop(t + 1.9);
+        o.stop(t + 2.1);
       });
     }
 
@@ -241,55 +312,95 @@
       const t = ctx.currentTime;
       const o = ctx.createOscillator();
       o.type = 'sine';
-      const start = 520 + Math.random() * 340;
+      const start = 620 + Math.random() * 380;
       o.frequency.setValueAtTime(start, t);
-      o.frequency.exponentialRampToValueAtTime(start * 0.35, t + 2.8);
+      o.frequency.exponentialRampToValueAtTime(start * 0.3, t + 3.2);
       const g = ctx.createGain();
       g.gain.setValueAtTime(0.0001, t);
-      g.gain.linearRampToValueAtTime(0.065, t + 0.7);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + 3.0);
+      g.gain.linearRampToValueAtTime(0.1, t + 0.8);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 3.4);
       const rev = ctx.createBiquadFilter();
       rev.type = 'bandpass';
-      rev.frequency.value = 800;
-      rev.Q.value = 1.5;
+      rev.frequency.value = 720;
+      rev.Q.value = 1.6;
       o.connect(rev).connect(g).connect(master);
       o.start(t);
-      o.stop(t + 3.2);
+      o.stop(t + 3.6);
     }
 
-    return { ctx, master, heartbeat, stab, wail, growl };
+    // زئير/فحيح عميق للأفعى
+    function snakeGrowl() {
+      const t = ctx.currentTime;
+      const o = ctx.createOscillator();
+      o.type = 'sawtooth';
+      o.frequency.setValueAtTime(42, t);
+      o.frequency.linearRampToValueAtTime(28, t + 1.6);
+      const f = ctx.createBiquadFilter();
+      f.type = 'lowpass';
+      f.frequency.value = 160;
+      f.Q.value = 10;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.linearRampToValueAtTime(0.19, t + 0.2);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 1.8);
+      o.connect(f).connect(g).connect(master);
+      o.start(t);
+      o.stop(t + 1.9);
+    }
+
+    return { ctx, master, heartbeat, boneClick, hiss, stab, wail, snakeGrowl };
   }
 
   let timers = [];
+
   function scheduleHorror() {
+    // نبضات القلب — أسرع وأقوى
     const loop = () => {
       if (!audio) return;
       audio.heartbeat();
-      timers.push(setTimeout(loop, 900 + Math.random() * 300));
+      timers.push(setTimeout(loop, 780 + Math.random() * 260));
     };
     loop();
 
+    // طقطقة العظام — مستمرة مع زحف الأفعى
+    const loopBones = () => {
+      if (!audio) return;
+      audio.boneClick();
+      timers.push(setTimeout(loopBones, 1400 + Math.random() * 2200));
+    };
+    setTimeout(loopBones, 900);
+
+    // هسهسة الأفعى
+    const loopHiss = () => {
+      if (!audio) return;
+      audio.hiss();
+      timers.push(setTimeout(loopHiss, 3200 + Math.random() * 4500));
+    };
+    setTimeout(loopHiss, 1800);
+
+    // صرير/طعنات
     const loopStab = () => {
       if (!audio) return;
       audio.stab();
-      timers.push(setTimeout(loopStab, 3000 + Math.random() * 6000));
+      timers.push(setTimeout(loopStab, 2600 + Math.random() * 5200));
     };
     setTimeout(loopStab, 2000);
 
+    // عواء بعيد
     const loopWail = () => {
       if (!audio) return;
       audio.wail();
-      timers.push(setTimeout(loopWail, 7000 + Math.random() * 10000));
+      timers.push(setTimeout(loopWail, 6500 + Math.random() * 9000));
     };
-    setTimeout(loopWail, 4500);
+    setTimeout(loopWail, 4200);
 
-    // زئير الوحش
+    // فحيح عميق
     const loopGrowl = () => {
       if (!audio) return;
-      audio.growl();
-      timers.push(setTimeout(loopGrowl, 2200 + Math.random() * 3500));
+      audio.snakeGrowl();
+      timers.push(setTimeout(loopGrowl, 2400 + Math.random() * 3200));
     };
-    setTimeout(loopGrowl, 1500);
+    setTimeout(loopGrowl, 1200);
   }
 
   /* ============================================================
@@ -332,28 +443,28 @@
   }, { passive: false });
 
   /* ============================================================
-     الوحش الهيكلي — أكبر بكثير
+     الأفعى العظمية العملاقة
      ============================================================ */
   const TAU = Math.PI * 2;
-  const NUM = 26;               // فقرات أكثر
-  const SEG = 22;               // مسافة أكبر = جسم أطول
-  const BODY_END = 16;
-  const BONE = '#e5e0cf';
+  const NUM = 46;                 // فقرات كثيرة جداً = جسم طويل
+  const SEG = 16;                 // المسافة بين الفقرات
+  const BONE = '#e8e3d2';
   const BONE_DARK = '#5a5340';
+  const SCALE = 2.2;              // ضخامة عامة
 
-  // حجم عام للوحش — سر كبير!
-  const SCALE = 1.75;
-
+  // الجسم على شكل مصفوفة (من الرأس إلى الذيل)
   const spine = [];
   for (let i = 0; i < NUM; i++) {
-    spine.push({ x: -400 - i * SEG, y: H * 0.5 });
+    spine.push({ x: -500 - i * SEG, y: H * 0.5 });
   }
 
-  let phase = 0;
-  let headAngle = 0;
+  let phase = 0;                  // دورة التموج
+  let headAngle = 0;              // اتجاه الرأس
   let shake = 0;
   let redFlash = 0;
-  let proximity = 0;          // 0..1 مدى قرب الوحش
+  let proximity = 0;
+  let tonguePhase = 0;            // للسان المشعب
+  let tongueOut = 0;              // 0..1 مدى خروج اللسان
 
   function dot(x, y, r) {
     ctx2d.beginPath();
@@ -366,76 +477,64 @@
     ctx2d.moveTo(x1, y1);
     ctx2d.lineTo(x2, y2);
     ctx2d.stroke();
-    dot(x1, y1, w * 0.75);
-    dot(x2, y2, w * 0.75);
+    dot(x1, y1, w * 0.78);
+    dot(x2, y2, w * 0.78);
   }
   function segAngle(i) {
     const a = spine[Math.max(0, i - 1)];
     const b = spine[Math.min(NUM - 1, i + 1)];
     return Math.atan2(b.y - a.y, b.x - a.x);
   }
-  function ik(hip, foot, l1, l2, bend) {
-    const dx = foot.x - hip.x, dy = foot.y - hip.y;
-    let d = Math.hypot(dx, dy);
-    d = Math.min(d, l1 + l2 - 0.01);
-    d = Math.max(d, Math.abs(l1 - l2) + 0.01);
-    const a = Math.atan2(dy, dx);
-    const cosA = (l1 * l1 + d * d - l2 * l2) / (2 * l1 * d);
-    const ang = Math.acos(Math.max(-1, Math.min(1, cosA)));
-    const ka = a + ang * bend;
-    return { x: hip.x + Math.cos(ka) * l1, y: hip.y + Math.sin(ka) * l1 };
-  }
 
   /* ============================================================
      جزيئات
      ============================================================ */
   const dust = [];
-  const fog  = [];
+  const fog = [];
   const blood = [];
-  const embers = [];      // شرارات حمراء تنبعث من الوحش
+  const embers = [];
 
-  for (let i = 0; i < 30; i++) {
+  for (let i = 0; i < 32; i++) {
     fog.push({
       x: Math.random() * W,
       y: Math.random() * H,
-      r: 110 + Math.random() * 240,
+      r: 110 + Math.random() * 250,
       vx: (Math.random() - 0.5) * 0.25,
       vy: (Math.random() - 0.5) * 0.18,
-      a: 0.022 + Math.random() * 0.04
+      a: 0.024 + Math.random() * 0.042
     });
   }
 
   function spawnDust() {
     const tail = spine[NUM - 1];
-    if (Math.random() < 0.5) {
+    if (Math.random() < 0.55) {
       dust.push({
-        x: tail.x + (Math.random() - 0.5) * 45,
-        y: tail.y + (Math.random() - 0.5) * 45,
+        x: tail.x + (Math.random() - 0.5) * 55,
+        y: tail.y + (Math.random() - 0.5) * 55,
         vx: (Math.random() - 0.5) * 0.5,
         vy: -0.15 - Math.random() * 0.5,
         life: 1,
-        r: 0.6 + Math.random() * 2.2
+        r: 0.6 + Math.random() * 2.3
       });
     }
-    if (dust.length > 400) dust.splice(0, dust.length - 400);
+    if (dust.length > 420) dust.splice(0, dust.length - 420);
   }
 
   function spawnEmbers() {
-    // شرارات من الجمجمة
     const head = spine[0];
-    if (Math.random() < 0.6) {
+    if (Math.random() < 0.7) {
       const a = headAngle + (Math.random() - 0.5) * 1.4;
-      const r = 28 * SCALE;
+      const r = 30 * SCALE;
       embers.push({
         x: head.x + Math.cos(a) * r,
         y: head.y + Math.sin(a) * r,
         vx: (Math.random() - 0.5) * 1.2,
         vy: -0.4 - Math.random() * 0.9,
         life: 1,
-        r: 0.8 + Math.random() * 2.2
+        r: 0.8 + Math.random() * 2.3
       });
     }
-    if (embers.length > 260) embers.splice(0, embers.length - 260);
+    if (embers.length > 300) embers.splice(0, embers.length - 300);
   }
 
   function spawnBlood(x, y) {
@@ -477,7 +576,7 @@
   }
 
   /* ============================================================
-     تحديث الوحش
+     تحديث الأفعى — حركة انسيابية مع تموج
      ============================================================ */
   function update(k) {
     const head = spine[0];
@@ -486,16 +585,23 @@
     let dy = mouse.y - head.y;
     let dist = Math.hypot(dx, dy) || 0.001;
 
-    const speed = Math.min(dist * 0.16, 18) * k;
+    // سرعة الرأس — تتحرك بشكل أسرع قليلاً
+    const speed = Math.min(dist * 0.17, 20) * k;
     head.x += (dx / dist) * speed;
     head.y += (dy / dist) * speed;
 
+    // اتجاه الرأس
     const target = Math.atan2(dy, dx);
     let da = target - headAngle;
     while (da > Math.PI) da -= TAU;
     while (da < -Math.PI) da += TAU;
-    headAngle += da * Math.min(1, 0.15 * k);
+    headAngle += da * Math.min(1, 0.16 * k);
 
+    // ---- سلسلة الجسم مع التموج الجانبي (زحف الأفعى) ----
+    const waveAmp = 6.5;                      // سعة التموج
+    phase += (speed * 0.055 + 0.028) * k;
+
+    // تراكم كل فقرة تتبع التي قبلها بمسافة ثابتة
     for (let i = 1; i < NUM; i++) {
       const a = spine[i - 1], b = spine[i];
       const ddx = b.x - a.x, ddy = b.y - a.y;
@@ -505,16 +611,31 @@
       b.y -= ddy * diff;
     }
 
-    phase += (speed * 0.018 + 0.014) * k;
+    // إضافة التموج الجانبي على كل فقرة حسب موقعها من الرأس
+    for (let i = 1; i < NUM; i++) {
+      const a = spine[i - 1], b = spine[i];
+      // الاتجاه من a إلى b
+      const ang = Math.atan2(b.y - a.y, b.x - a.x);
+      // العمودي على الاتجاه
+      const nx = -Math.sin(ang), ny = Math.cos(ang);
+      // موجة متدرجة على طول الجسم
+      const wave = Math.sin(phase + i * 0.4) * waveAmp * (i / NUM);
+      b.x += nx * wave * 0.16;
+      b.y += ny * wave * 0.16;
+    }
+
+    // لسان متحرك
+    tonguePhase += 0.09 * k;
+    tongueOut = Math.max(0, Math.sin(tonguePhase) * 1.3);
 
     // مدى القرب
-    proximity = Math.max(0, Math.min(1, 1 - dist / 260));
+    proximity = Math.max(0, Math.min(1, 1 - dist / 300));
 
-    // اهتزاز + فلاش + دم عند القرب
-    if (dist < 200) {
-      shake = Math.max(shake, Math.min(14, (200 - dist) * 0.12));
-      if (Math.random() < 0.35) spawnBlood(mouse.x, -10);
-      if (Math.random() < 0.03) redFlash = Math.max(redFlash, 0.55);
+    // اهتزاز + فلاش + دم
+    if (dist < 220) {
+      shake = Math.max(shake, Math.min(16, (220 - dist) * 0.13));
+      if (Math.random() < 0.4) spawnBlood(mouse.x, -10);
+      if (Math.random() < 0.035) redFlash = Math.max(redFlash, 0.6);
     }
     shake *= Math.pow(0.90, k);
     redFlash *= Math.pow(0.94, k);
@@ -533,8 +654,8 @@
     ctx2d.globalCompositeOperation = 'lighter';
     for (const f of fog) {
       const g = ctx2d.createRadialGradient(f.x, f.y, 0, f.x, f.y, f.r);
-      g.addColorStop(0, `rgba(70,15,15,${f.a})`);
-      g.addColorStop(0.5, `rgba(30,8,8,${f.a * 0.5})`);
+      g.addColorStop(0, `rgba(80,15,15,${f.a})`);
+      g.addColorStop(0.5, `rgba(35,8,8,${f.a * 0.5})`);
       g.addColorStop(1, 'rgba(0,0,0,0)');
       ctx2d.fillStyle = g;
       ctx2d.beginPath();
@@ -547,7 +668,7 @@
   function drawDust() {
     ctx2d.fillStyle = 'rgba(150,180,220,1)';
     for (const p of dust) {
-      ctx2d.globalAlpha = p.life * 0.4;
+      ctx2d.globalAlpha = p.life * 0.42;
       ctx2d.beginPath();
       ctx2d.arc(p.x, p.y, p.r, 0, TAU);
       ctx2d.fill();
@@ -558,12 +679,12 @@
   function drawEmbers() {
     ctx2d.save();
     ctx2d.shadowColor = 'rgba(255,60,0,0.9)';
-    ctx2d.shadowBlur = 12;
+    ctx2d.shadowBlur = 14;
     for (const p of embers) {
       ctx2d.globalAlpha = p.life * 0.9;
       const g = ctx2d.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * 3);
-      g.addColorStop(0, 'rgba(255,200,100,1)');
-      g.addColorStop(0.4, 'rgba(255,60,0,0.8)');
+      g.addColorStop(0, 'rgba(255,210,120,1)');
+      g.addColorStop(0.4, 'rgba(255,60,0,0.85)');
       g.addColorStop(1, 'rgba(120,0,0,0)');
       ctx2d.fillStyle = g;
       ctx2d.beginPath();
@@ -590,243 +711,275 @@
     ctx2d.restore();
   }
 
-  // ذيل بأشواك
-  function drawTail() {
-    for (let i = BODY_END + 1; i < NUM - 1; i++) {
-      const t = (i - BODY_END) / (NUM - 1 - BODY_END);
-      const w = Math.max(1.4, 5.5 - t * 3.6);
-      bone(spine[i].x, spine[i].y, spine[i + 1].x, spine[i + 1].y, w);
+  /* رسم فقرة عظمية واحدة (شكل مثلثي مثل الفقرات الحقيقية) */
+  function drawVertebra(p, ang, scale, isNeck) {
+    ctx2d.save();
+    ctx2d.translate(p.x, p.y);
+    ctx2d.rotate(ang);
 
-      // أشواك على الذيل
-      if (i % 2 === 0 && i < NUM - 2) {
-        const p = spine[i];
-        const a = segAngle(i);
-        const nx = -Math.sin(a), ny = Math.cos(a);
-        const sl = 9 * SCALE * (1 - t * 0.6);
-        ctx2d.lineWidth = 1.6;
-        for (const s of [1, -1]) {
-          ctx2d.beginPath();
-          ctx2d.moveTo(p.x, p.y);
-          ctx2d.lineTo(p.x + nx * s * sl, p.y + ny * s * sl);
-          ctx2d.stroke();
-        }
-      }
-    }
-    // رأس مدبب للذيل
-    const last = spine[NUM - 1];
-    const prev = spine[NUM - 2];
-    const a = Math.atan2(last.y - prev.y, last.x - prev.x);
-    const tl = 16 * SCALE;
-    ctx2d.lineWidth = 1.4;
+    // جسم الفقرة
     ctx2d.beginPath();
-    ctx2d.moveTo(last.x, last.y);
-    ctx2d.lineTo(last.x + Math.cos(a) * tl, last.y + Math.sin(a) * tl);
-    ctx2d.stroke();
+    ctx2d.ellipse(0, 0, 5 * scale, 4.2 * scale, 0, 0, TAU);
+    ctx2d.fill();
+
+    // نتوء شوكي علوي
+    if (!isNeck) {
+      ctx2d.beginPath();
+      ctx2d.moveTo(0, 0);
+      ctx2d.lineTo(-1.5 * scale, -8 * scale);
+      ctx2d.lineTo(1.5 * scale, -8 * scale);
+      ctx2d.closePath();
+      ctx2d.fill();
+
+      // نتوء شوكي سفلي
+      ctx2d.beginPath();
+      ctx2d.moveTo(0, 0);
+      ctx2d.lineTo(-1.5 * scale, 8 * scale);
+      ctx2d.lineTo(1.5 * scale, 8 * scale);
+      ctx2d.closePath();
+      ctx2d.fill();
+    }
+
+    // نتوءات جانبية
+    ctx2d.beginPath();
+    ctx2d.moveTo(0, 0);
+    ctx2d.lineTo(-2 * scale, -6 * scale);
+    ctx2d.lineTo(2 * scale, -6 * scale);
+    ctx2d.closePath();
+    ctx2d.fill();
+
+    ctx2d.beginPath();
+    ctx2d.moveTo(0, 0);
+    ctx2d.lineTo(-2 * scale, 6 * scale);
+    ctx2d.lineTo(2 * scale, 6 * scale);
+    ctx2d.closePath();
+    ctx2d.fill();
+
+    ctx2d.restore();
   }
 
-  // أضلاع أكبر وأكثر
-  function drawRibs() {
-    ctx2d.lineWidth = 3.2;
-    for (let i = 3; i <= 13; i++) {
+  /* رسم العمود الفقري والأضلاع على طول الجسم */
+  function drawBody() {
+    // الأضلاع (كل فقرة لها ضلعان قصيران)
+    ctx2d.lineWidth = 2.6;
+    for (let i = 1; i < NUM - 1; i++) {
       const p = spine[i];
       const a = segAngle(i);
-      const fx = Math.cos(a), fy = Math.sin(a);
-      const nx = -fy, ny = fx;
-      const t = (i - 3) / 10;
-      const len = 12 + 22 * Math.sin(t * Math.PI);
+      // شدة التموج تزيد الأضلاع طولاً كلما اتجهنا للجسم
+      const t = Math.min(1, i / (NUM * 0.7));
+      const ribLen = (14 + 12 * Math.sin(t * Math.PI)) * SCALE * 0.6;
+      const nx = -Math.sin(a), ny = Math.cos(a);
+
+      // الضلعان (يمين ويسار) يشكلان قوساً بسيطاً
       for (const s of [1, -1]) {
-        const ox = nx * s, oy = ny * s;
-        const cx = p.x + fx * len * 0.12 + ox * len * 1.15;
-        const cy = p.y + fy * len * 0.12 + oy * len * 1.15;
-        const ex = p.x + fx * len * 0.6 + ox * len * 0.3;
-        const ey = p.y + fy * len * 0.6 + oy * len * 0.3;
+        const cx = p.x + nx * s * ribLen * 1.1;
+        const cy = p.y + ny * s * ribLen * 1.1;
+        const ex = p.x + Math.cos(a) * 2 + nx * s * ribLen * 0.55;
+        const ey = p.y + Math.sin(a) * 2 + ny * s * ribLen * 0.55;
         ctx2d.beginPath();
         ctx2d.moveTo(p.x, p.y);
         ctx2d.quadraticCurveTo(cx, cy, ex, ey);
         ctx2d.stroke();
       }
     }
-  }
 
-  function drawSpine() {
-    ctx2d.lineWidth = 5.5;
+    // الفقرات (نرسم من الذيل إلى الرأس حتى تكون الجمجمة على القمة)
+    for (let i = NUM - 1; i >= 1; i--) {
+      const p = spine[i];
+      const a = segAngle(i);
+      // تصغير تدريجي نحو الذيل
+      const sc = (i > NUM - 8) ? 0.55 : (i > NUM - 16 ? 0.75 : 1);
+      ctx2d.fillStyle = BONE;
+      // ربط الفقرات بخط رقيق
+      if (i > 1) {
+        const prev = spine[i - 1];
+        ctx2d.lineWidth = 2.4 * sc;
+        ctx2d.beginPath();
+        ctx2d.moveTo(prev.x, prev.y);
+        ctx2d.lineTo(p.x, p.y);
+        ctx2d.stroke();
+      }
+      drawVertebra(p, a, sc * SCALE * 0.55, i < 4);
+    }
+
+    // طرف الذيل مدبب
+    const tail = spine[NUM - 1];
+    const prev = spine[NUM - 2];
+    const ta = Math.atan2(tail.y - prev.y, tail.x - prev.x);
+    ctx2d.lineWidth = 2;
     ctx2d.beginPath();
-    ctx2d.moveTo(spine[0].x, spine[0].y);
-    for (let i = 1; i <= BODY_END; i++) ctx2d.lineTo(spine[i].x, spine[i].y);
+    ctx2d.moveTo(tail.x, tail.y);
+    ctx2d.lineTo(tail.x + Math.cos(ta) * 22, tail.y + Math.sin(ta) * 22);
     ctx2d.stroke();
-    for (let i = 1; i <= BODY_END; i++) {
-      dot(spine[i].x, spine[i].y, 3.6);
-      // أشواك علوية على العمود الفقري
-      if (i % 2 === 0 && i >= 3) {
-        const p = spine[i];
-        const a = segAngle(i);
-        const nx = -Math.sin(a), ny = Math.cos(a);
-        const sl = 10 * SCALE;
-        ctx2d.lineWidth = 1.8;
-        ctx2d.beginPath();
-        ctx2d.moveTo(p.x, p.y);
-        ctx2d.lineTo(p.x + nx * sl, p.y + ny * sl);
-        ctx2d.stroke();
-      }
-    }
+    // رأس سهم للذيل
+    ctx2d.beginPath();
+    ctx2d.moveTo(tail.x + Math.cos(ta) * 22, tail.y + Math.sin(ta) * 22);
+    ctx2d.lineTo(
+      tail.x + Math.cos(ta - 2.6) * 10,
+      tail.y + Math.sin(ta - 2.6) * 10
+    );
+    ctx2d.lineTo(
+      tail.x + Math.cos(ta + 2.6) * 10,
+      tail.y + Math.sin(ta + 2.6) * 10
+    );
+    ctx2d.closePath();
+    ctx2d.fill();
   }
 
-  // 6 أرجل ضخمة بمخالب
-  const LEGS = [
-    { i: 4,  side:  1, off: 0 },
-    { i: 4,  side: -1, off: Math.PI },
-    { i: 9,  side:  1, off: Math.PI * 0.5 },
-    { i: 9,  side: -1, off: Math.PI * 1.5 },
-    { i: 14, side:  1, off: Math.PI },
-    { i: 14, side: -1, off: 0 }
-  ];
-
-  function drawLegs() {
-    for (const L of LEGS) {
-      const p = spine[L.i];
-      const a = segAngle(L.i);
-      const fx = Math.cos(a), fy = Math.sin(a);
-      const nx = -fy * L.side, ny = fx * L.side;
-      const hip = { x: p.x + nx * 10, y: p.y + ny * 10 };
-      const s = Math.sin(phase + L.off);
-      const reach = 42 * SCALE + Math.max(0, s) * 12 * SCALE;
-      const foot = {
-        x: hip.x + nx * reach + fx * (s * 20 * SCALE),
-        y: hip.y + ny * reach + fy * (s * 20 * SCALE)
-      };
-      const knee = ik(hip, foot, 28 * SCALE, 28 * SCALE, L.side);
-      bone(hip.x, hip.y, knee.x, knee.y, 4);
-      bone(knee.x, knee.y, foot.x, foot.y, 3.2);
-
-      // مخالب
-      const fa = Math.atan2(foot.y - knee.y, foot.x - knee.x);
-      ctx2d.lineWidth = 1.8;
-      for (let c = -1; c <= 1; c++) {
-        const ca = fa + c * 0.5;
-        ctx2d.beginPath();
-        ctx2d.moveTo(foot.x, foot.y);
-        ctx2d.lineTo(foot.x + Math.cos(ca) * 14, foot.y + Math.sin(ca) * 14);
-        ctx2d.stroke();
-      }
-      dot(foot.x, foot.y, 3.4);
-    }
-  }
-
-  /* الجمجمة المخيفة العملاقة */
-  function drawSkull(x, y, a) {
-    const s = SCALE * 1.15;    // حجم الجمجمة
+  /* جمجمة الأفعى — طويلة، فكّان، أنياب، لسان مشعب */
+  function drawSnakeSkull(x, y, a) {
+    const s = SCALE * 1.05;
 
     ctx2d.save();
     ctx2d.translate(x, y);
     ctx2d.rotate(a);
 
     // هالة حمراء عملاقة
-    const halo = ctx2d.createRadialGradient(0, 0, 4, 0, 0, 70 * s);
-    halo.addColorStop(0, `rgba(200,0,0,${0.35 + proximity * 0.4})`);
-    halo.addColorStop(0.4, `rgba(140,0,0,${0.15 + proximity * 0.15})`);
+    const halo = ctx2d.createRadialGradient(0, 0, 4, 0, 0, 85 * s);
+    halo.addColorStop(0, `rgba(220,0,0,${0.4 + proximity * 0.4})`);
+    halo.addColorStop(0.4, `rgba(150,0,0,${0.18 + proximity * 0.18})`);
     halo.addColorStop(1, 'rgba(80,0,0,0)');
     ctx2d.fillStyle = halo;
     ctx2d.beginPath();
-    ctx2d.arc(0, 0, 70 * s, 0, TAU);
+    ctx2d.arc(0, 0, 85 * s, 0, TAU);
     ctx2d.fill();
 
     ctx2d.scale(s, s);
-    ctx2d.fillStyle = BONE;
-    ctx2d.shadowColor = `rgba(255,20,20,${0.7 + proximity * 0.3})`;
-    ctx2d.shadowBlur = 20;
 
-    // القحف
+    ctx2d.fillStyle = BONE;
+    ctx2d.shadowColor = `rgba(255,20,20,${0.75 + proximity * 0.25})`;
+    ctx2d.shadowBlur = 22;
+
+    /* ===== القحف (خلف الرأس) ===== */
     ctx2d.beginPath();
-    ctx2d.ellipse(-3, 0, 18, 16, 0, 0, TAU);
+    ctx2d.ellipse(-16, 0, 16, 13, 0, 0, TAU);
     ctx2d.fill();
 
-    // نتوءات على القحف (أشواك)
-    for (let i = 0; i < 7; i++) {
-      const ang = Math.PI + (i / 6) * Math.PI;
-      const bx = -3 + Math.cos(ang) * 16;
-      const by = Math.sin(ang) * 14;
+    // أشواك على القحف
+    for (let i = 0; i < 6; i++) {
+      const ang = Math.PI * 0.75 + (i / 5) * Math.PI * 1.5;
+      const bx = -16 + Math.cos(ang) * 15;
+      const by = Math.sin(ang) * 12;
       const nx = Math.cos(ang), ny = Math.sin(ang);
       ctx2d.beginPath();
-      ctx2d.moveTo(bx - ny * 2.2, by + nx * 2.2);
+      ctx2d.moveTo(bx - ny * 2.4, by + nx * 2.4);
       ctx2d.lineTo(bx + nx * 7, by + ny * 7);
-      ctx2d.lineTo(bx + ny * 2.2, by - nx * 2.2);
+      ctx2d.lineTo(bx + ny * 2.4, by - nx * 2.4);
       ctx2d.closePath();
       ctx2d.fill();
     }
 
-    // الوجه / الفك العلوي
+    /* ===== الوجه / الفك العلوي الطويل (شكل الأفعى) ===== */
     ctx2d.beginPath();
-    ctx2d.ellipse(15, 0, 15, 11, 0, 0, TAU);
+    ctx2d.moveTo(-6, -11);
+    ctx2d.quadraticCurveTo(20, -12, 36, -4);
+    ctx2d.quadraticCurveTo(40, 0, 36, 4);
+    ctx2d.quadraticCurveTo(20, 12, -6, 11);
+    ctx2d.closePath();
     ctx2d.fill();
 
-    // شقوق عميقة
+    /* ===== شقوق عميقة ===== */
     ctx2d.shadowBlur = 0;
     ctx2d.strokeStyle = BONE_DARK;
-    ctx2d.lineWidth = 1.2;
+    ctx2d.lineWidth = 1.3;
     ctx2d.beginPath();
-    ctx2d.moveTo(-15, -8); ctx2d.lineTo(-8, -3); ctx2d.lineTo(-12, 4);
-    ctx2d.moveTo(-5, -14); ctx2d.lineTo(-1, -7);
-    ctx2d.moveTo(3, 11); ctx2d.lineTo(7, 5);
-    ctx2d.moveTo(-18, 3); ctx2d.lineTo(-13, 7);
+    ctx2d.moveTo(-24, -6); ctx2d.lineTo(-14, -2); ctx2d.lineTo(-20, 5);
+    ctx2d.moveTo(-10, -12); ctx2d.lineTo(-5, -5);
+    ctx2d.moveTo(8, 9); ctx2d.lineTo(14, 3);
+    ctx2d.moveTo(-26, 4); ctx2d.lineTo(-18, 8);
+    ctx2d.moveTo(28, -6); ctx2d.lineTo(32, -2);
     ctx2d.stroke();
 
-    // فتحة الأنف الكبيرة المخيفة
+    /* ===== محجرا العين (كبيران وعميقان) ===== */
     ctx2d.fillStyle = '#000';
-    ctx2d.beginPath();
-    ctx2d.ellipse(24, 0, 3.5, 4.5, 0, 0, TAU);
-    ctx2d.fill();
+    ctx2d.beginPath(); ctx2d.ellipse(-14, -6, 6.5, 6, 0, 0, TAU); ctx2d.fill();
+    ctx2d.beginPath(); ctx2d.ellipse(-14,  6, 6.5, 6, 0, 0, TAU); ctx2d.fill();
 
-    // أسنان حادة كالخناجر
-    ctx2d.fillStyle = BONE;
-    for (let i = -3; i <= 3; i++) {
-      const th = i * 0.34;
-      const bx = 15 + Math.cos(th) * 15;
-      const by = Math.sin(th) * 11;
-      const nx = Math.cos(th), ny = Math.sin(th);
-      const px = -ny, py = nx;
-      const L = i === 0 ? 11 : 9 - Math.abs(i) * 0.7;
-      ctx2d.beginPath();
-      ctx2d.moveTo(bx + px * 2.2, by + py * 2.2);
-      ctx2d.lineTo(bx + nx * L, by + ny * L);
-      ctx2d.lineTo(bx - px * 2.2, by - py * 2.2);
-      ctx2d.closePath();
-      ctx2d.fill();
-    }
+    /* ===== فتحتا الأنف ===== */
+    ctx2d.beginPath(); ctx2d.arc(30, -2.4, 1.8, 0, TAU); ctx2d.fill();
+    ctx2d.beginPath(); ctx2d.arc(30,  2.4, 1.8, 0, TAU); ctx2d.fill();
 
-    // فك سفلي بأسنان
-    ctx2d.beginPath();
-    ctx2d.ellipse(20, 0, 12, 4, 0, 0, TAU);
-    ctx2d.fill();
-    ctx2d.fillStyle = BONE;
-    for (let i = -2; i <= 2; i++) {
-      const bx = 20 + i * 4.5;
-      ctx2d.beginPath();
-      ctx2d.moveTo(bx - 1.5, -1);
-      ctx2d.lineTo(bx, -6);
-      ctx2d.lineTo(bx + 1.5, -1);
-      ctx2d.closePath();
-      ctx2d.fill();
-    }
-
-    // محجرا العين — أكبر وأعمق
-    ctx2d.fillStyle = '#000';
-    ctx2d.beginPath(); ctx2d.ellipse(-1, -7, 6.5, 6, 0, 0, TAU); ctx2d.fill();
-    ctx2d.beginPath(); ctx2d.ellipse(-1,  7, 6.5, 6, 0, 0, TAU); ctx2d.fill();
-
-    // عيون حمراء متوهجة — نبض قوي + توسع عند القرب
-    const pulse = 0.7 + 0.3 * Math.sin(performance.now() * 0.01);
-    const eyeSize = 3 + proximity * 1.5;
+    /* ===== العيون الحمراء المتوهجة النابضة ===== */
+    const pulse = 0.7 + 0.3 * Math.sin(performance.now() * 0.011);
+    const eyeSize = 3.4 + proximity * 1.8;
     ctx2d.fillStyle = `rgba(255,15,15,${pulse})`;
     ctx2d.shadowColor = 'rgba(255,0,0,1)';
-    ctx2d.shadowBlur = 30;
-    ctx2d.beginPath(); ctx2d.arc(0.5, -7, eyeSize, 0, TAU); ctx2d.fill();
-    ctx2d.beginPath(); ctx2d.arc(0.5,  7, eyeSize, 0, TAU); ctx2d.fill();
+    ctx2d.shadowBlur = 34;
+    ctx2d.beginPath(); ctx2d.arc(-13, -6, eyeSize, 0, TAU); ctx2d.fill();
+    ctx2d.beginPath(); ctx2d.arc(-13,  6, eyeSize, 0, TAU); ctx2d.fill();
 
     // نقاط بيضاء
     ctx2d.shadowBlur = 0;
     ctx2d.fillStyle = '#fff';
-    ctx2d.beginPath(); ctx2d.arc(1.5, -7.5, 1, 0, TAU); ctx2d.fill();
-    ctx2d.beginPath(); ctx2d.arc(1.5,  6.5, 1, 0, TAU); ctx2d.fill();
+    ctx2d.beginPath(); ctx2d.arc(-12, -6.6, 1, 0, TAU); ctx2d.fill();
+    ctx2d.beginPath(); ctx2d.arc(-12,  5.4, 1, 0, TAU); ctx2d.fill();
+
+    /* ===== أنياب علوية (طويلة كالخناجر) ===== */
+    ctx2d.fillStyle = BONE;
+    ctx2d.shadowColor = 'rgba(255,80,80,0.5)';
+    ctx2d.shadowBlur = 6;
+    // نابان كبيران أماميان
+    ctx2d.beginPath();
+    ctx2d.moveTo(28, -5.5);
+    ctx2d.lineTo(31, -1);
+    ctx2d.lineTo(25, -3.5);
+    ctx2d.closePath();
+    ctx2d.fill();
+    ctx2d.beginPath();
+    ctx2d.moveTo(28, 5.5);
+    ctx2d.lineTo(31, 1);
+    ctx2d.lineTo(25, 3.5);
+    ctx2d.closePath();
+    ctx2d.fill();
+
+    // صف أسنان على طول الفك
+    for (let i = 0; i < 7; i++) {
+      const bx = 4 + i * 4;
+      const tl = 3 - Math.abs(i - 3) * 0.3;
+      // علوية
+      ctx2d.beginPath();
+      ctx2d.moveTo(bx - 1.4, -4 - tl * 0.5);
+      ctx2d.lineTo(bx, -4 + tl);
+      ctx2d.lineTo(bx + 1.4, -4 - tl * 0.5);
+      ctx2d.closePath();
+      ctx2d.fill();
+      // سفلية
+      ctx2d.beginPath();
+      ctx2d.moveTo(bx - 1.4, 4 + tl * 0.5);
+      ctx2d.lineTo(bx, 4 - tl);
+      ctx2d.lineTo(bx + 1.4, 4 + tl * 0.5);
+      ctx2d.closePath();
+      ctx2d.fill();
+    }
+
+    /* ===== اللسان المشعب (يمتد للأمام) ===== */
+    ctx2d.shadowColor = 'rgba(255,0,60,0.9)';
+    ctx2d.shadowBlur = 15;
+    ctx2d.strokeStyle = `rgba(220,20,60,${0.75 + tongueOut * 0.25})`;
+    ctx2d.lineWidth = 1.6;
+    const tLen = 14 + tongueOut * 26;
+    const baseX = 34;
+    // الجذع
+    ctx2d.beginPath();
+    ctx2d.moveTo(baseX, 0);
+    ctx2d.lineTo(baseX + tLen * 0.55, 0);
+    ctx2d.stroke();
+    // فرعا اللسان
+    ctx2d.beginPath();
+    ctx2d.moveTo(baseX + tLen * 0.55, 0);
+    ctx2d.lineTo(baseX + tLen, -4 - tongueOut * 3);
+    ctx2d.moveTo(baseX + tLen * 0.55, 0);
+    ctx2d.lineTo(baseX + tLen,  4 + tongueOut * 3);
+    ctx2d.stroke();
+
+    // كرات صغيرة في نهاية اللسان
+    ctx2d.fillStyle = 'rgba(255,40,80,1)';
+    ctx2d.beginPath();
+    ctx2d.arc(baseX + tLen, -4 - tongueOut * 3, 1.6, 0, TAU);
+    ctx2d.fill();
+    ctx2d.beginPath();
+    ctx2d.arc(baseX + tLen,  4 + tongueOut * 3, 1.6, 0, TAU);
+    ctx2d.fill();
 
     ctx2d.restore();
   }
@@ -858,8 +1011,8 @@
       W * 0.5, H * 0.5, Math.max(W, H) * 0.78
     );
     g.addColorStop(0, 'rgba(0,0,0,0)');
-    g.addColorStop(0.65, `rgba(${20 + proximity * 60},0,0,${0.55 + proximity * 0.2})`);
-    g.addColorStop(1, `rgba(${40 + proximity * 80},0,0,0.95)`);
+    g.addColorStop(0.65, `rgba(${20 + proximity * 70},0,0,${0.55 + proximity * 0.2})`);
+    g.addColorStop(1, `rgba(${40 + proximity * 90},0,0,0.95)`);
     ctx2d.fillStyle = g;
     ctx2d.fillRect(0, 0, W, H);
 
@@ -888,27 +1041,21 @@
     drawDust();
     ctx2d.restore();
 
-    // الوحش
+    // الأفعى العظمية
     ctx2d.save();
     ctx2d.strokeStyle = BONE;
     ctx2d.fillStyle = BONE;
     ctx2d.lineCap = 'round';
     ctx2d.lineJoin = 'round';
-    ctx2d.shadowColor = `rgba(200,20,20,${0.7 + proximity * 0.3})`;
+    ctx2d.shadowColor = `rgba(220,20,20,${0.7 + proximity * 0.3})`;
     ctx2d.shadowBlur = 14;
 
-    drawTail();
-    drawRibs();
-    drawSpine();
-    drawLegs();
-    drawSkull(spine[0].x, spine[0].y, headAngle);
+    drawBody();
+    drawSnakeSkull(spine[0].x, spine[0].y, headAngle);
 
     ctx2d.restore();
 
-    // شرارات
     drawEmbers();
-
-    // دم
     drawBlood();
 
     ctx2d.restore();
@@ -953,15 +1100,15 @@
 
     overlay.classList.add('hide');
     started = true;
-    redFlash = 0.8;
-    shake = 10;
+    redFlash = 0.85;
+    shake = 12;
 
     setTimeout(() => {
       const iv = setInterval(() => {
         if (Math.random() < 0.4) spawnBlood(Math.random() * W, -10);
-      }, 900);
+      }, 850);
       timers.push(iv);
-    }, 1200);
+    }, 1000);
   });
 
   document.addEventListener('visibilitychange', () => {
